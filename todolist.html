@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>todolist</title>
+<style>
+    body {
+        background-color: #eeeeee;
+        font-size: 16px ;
+    }
+    .container {
+        width: 600px;
+        margin: 80px auto;
+        
+    }
+    .title {
+        color: red;
+        font-size: 60px;
+        text-align: center;
+    }
+    .listBox {
+        width: 100%;
+        background-color: #fff;
+        box-shadow: 1px 5px 10px #dddddd;
+    }
+    input {
+        outline: none;
+        border: none;
+    }
+    .header {
+        width: 100%;
+        background-color: #fff;
+    }
+    .addTodo {
+        width: 400px;
+        padding: 10px 0px;
+        margin-left: 15px;
+        
+    }
+    .item {
+        padding: 5px 0px;
+        border-bottom: 1px solid #cccccc;
+    }
+    .todo {
+        margin-left: 15px;
+        
+    }
+    /* input[type=checked] {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+    } */
+    .footer {
+        padding: 20px 10px 10px 10px;
+        background-color: #fff;
+        display: flex;
+        justify-content: flex-start;
+        color: #cccccc;
+    }
+    .footLeft {
+        width: 150px;
+    }
+    .footLeft span {
+        margin-right: 5px;
+    }
+    .footRight>a {
+        margin-right: 15px;
+    }
+</style>
+<script src="https://cdn.staticfile.org/react/16.4.0/umd/react.development.js"></script>
+<script src="https://cdn.staticfile.org/react-dom/16.4.0/umd/react-dom.development.js"></script>
+<script src="https://cdn.staticfile.org/babel-standalone/6.26.0/babel.min.js"></script>
+</head>
+<body>
+ 
+<div id="root"></div>
+<script type="text/babel">
+const {Component} = React
+
+
+// 添加任务
+class Header extends Component {
+    addTodo = event => {
+        const {keyCode,target:{value}} = event;
+        if(keyCode === 13) {
+            // 给父组件添加todo
+            let todo = {id: +new Date(), title: value, isFinished: false};
+            // 触发父组件中的事件
+            this.props.addTodo(todo);
+            // 清空添加任务项
+            event.target.value = '';
+        }
+    }
+    render() {
+        const {isAllFinished} = this.props;
+        return (
+            <div className='header'>
+                <input type="checkbox" checked={isAllFinished} onChange={this.updateAllState}/>
+                <input onKeyDown={this.addTodo} type="text" className='addTodo' placeholder='What need to be done?'/>
+            </div>
+        )
+    }
+    updateAllState = event => {
+        // 触发父组件中的方法
+        this.props.updateAllState(event.target.checked)
+    }
+}
+// 主体任务内容
+class Main extends Component {  
+
+    render() {
+        const {updateOneState} = this.props;
+        return (
+            <div className='listBox'>    
+                {
+                    this.props.todolist.map(item => {
+                        return (
+                            <Item key={item.id} todo={item} updateOneState={updateOneState}/>
+                        )
+                    })
+                }
+            </div>
+        )
+    }
+}
+// 任务列表
+class Item extends Component{
+    render() {
+        const {id,isFinished,title} = this.props.todo;
+        return (
+            
+            <div className='item'>
+                <input type="checkbox" onChange={event => this.handleTodo(event,id)} checked={isFinished}/>
+                <span className='todo'>{title}</span> 
+                   
+            </div>
+        )
+    }
+    handleTodo = (event,id) => {
+        this.props.updateOneState(event.target.checked,id);    
+    }
+}
+// 尾部
+class Footer extends Component {
+    render() {
+        const {todoCount} = this.props;
+        return (
+            <div className='footer'>
+                <div className='footLeft'>
+                    <span>{todoCount}</span>items left 
+                </div>  
+                <div className='footRight'>
+                   <a onClick={this.showAllTodo}>All</a> 
+                   <a onClick={this.showActiveTodo}>Active</a> 
+                   <a onClick={this.showFinishedTodo}>Completed</a> 
+                   <a onClick={this.clearFinishedTodo}>clearCompleted</a>
+                </div>    
+
+            </div>
+        )
+    }
+    // 所有任务
+    showAllTodo = () => {
+        this.props.showAllTodo();
+    }
+    // 未完成
+    showActiveTodo = () => {
+        this.props.showActiveTodo()
+    }
+    // 完成
+    showFinishedTodo = () => {
+        this.props.showFinishedTodo()
+    }
+    // 清除已完成的任务
+    clearFinishedTodo = () => {
+        this.props.clearFinishedTodo()
+    }
+}
+// 总的组件
+class App extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            todolist: [{
+                id: '01', title: '吃饭', isFinished: true
+            },{
+                id: '02', title: '睡觉', isFinished: false
+            },{
+                id: '03', title: '敲代码', isFinished: true
+            }],
+            filterTodolist: []
+        }
+        
+    }
+    componentDidMount() {
+        // 复制一份到条件筛选list里
+        const {todolist} = this.state
+        this.setState({
+            filterTodolist: this.state.todolist
+        })
+    }
+   
+    render() {
+        
+        const {filterTodolist} = this.state;
+    
+        // 查看任务是否全部完成
+        const isAllFinished = filterTodolist.length === 0 ? false : filterTodolist.every(item => item.isFinished);
+        // 各个组件传值的属性和方法
+        const headerProps = {
+            addTodo: this.addTodo,
+            updateAllState: this.updateAllState,
+            isAllFinished
+        }
+        const mainProps = {
+            todolist: filterTodolist,
+            updateOneState: this.updateOneState
+        }
+        const footerProps = {
+            todoCount: filterTodolist.length,
+            showAllTodo: this.showAllTodo,
+            showFinishedTodo: this.showFinishedTodo,
+            showActiveTodo: this.showActiveTodo,
+            clearFinishedTodo: this.clearFinishedTodo
+        }
+        return (
+            <div className='container'>
+                <div className='title'>todos</div>
+                <Header {...headerProps}/>
+                <Main {...mainProps}/>
+                <Footer {...footerProps}/>
+            </div>
+            
+        )
+    }
+    // 添加任务
+    addTodo = (todo) => {
+        const {todolist,filterTodolist} = this.state;
+        this.setState({
+            todolist: [todo, ...todolist],
+            filterTodolist: [todo, ...todolist]
+        })
+    }
+    // 全选状态更新
+    updateAllState = isAllFinished => {
+        console.log(isAllFinished);
+        const {todolist} = this.state;
+        const newTodolist = todolist.map(item => {
+            item.isFinished = isAllFinished;
+            return item;
+        });
+        
+        this.setState({
+            todolist: newTodolist
+        })
+    }
+    // 单个任务更改状态
+    updateOneState = (checked, id) => {
+        const {todolist} = this.state;
+        // 根据id筛选任务
+        const todoIndex = this.state.todolist.findIndex(item => item.id == id);
+        const todo = todolist[todoIndex];
+        todo.isFinished = checked;
+        
+        todolist.splice(todoIndex,1,todo)
+        // 更新数据
+        this.setState({
+            todolist
+        })
+
+    }
+    // 全部任务
+    showAllTodo = () => {
+        const {todolist} = this.state;
+        this.setState({
+            filterTodolist: todolist,
+            
+        })
+    }
+    // 已完成任务
+    showFinishedTodo = () => {
+        const {todolist} = this.state;
+        const finshedTodo = todolist.filter(item => item.isFinished);
+        this.setState({
+            filterTodolist: finshedTodo,
+        })
+    }  
+    // 未完成任务 
+    showActiveTodo = () => {
+        const {todolist} = this.state;
+        const activeTodo = todolist.filter(item => !item.isFinished)
+        this.setState({
+            filterTodolist: activeTodo
+        })
+    }
+    // 清除完成的任务
+    clearFinishedTodo = () => {
+        const {todolist} = this.state;
+        const newtodolist = todolist.filter(item => !item.isFinished);
+        this.setState({
+            filterTodolist: newtodolist,
+            todolist: newtodolist
+        })
+    }
+}
+ReactDOM.render(
+    <App />,
+    document.getElementById('root')
+);
+</script>
+ 
+</body>
+</html>
