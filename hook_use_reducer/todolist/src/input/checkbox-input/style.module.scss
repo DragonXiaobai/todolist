@@ -1,0 +1,37 @@
+.checkbox {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  label {
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 1px solid #f4f4f4;
+    cursor: pointer;
+    left: 0;
+    top: 0;
+    &::after {
+      content: "";
+      position: absolute;
+      width: 9px;
+      height: 5px;
+      background: transparent;
+      top: 8px;
+      left: 8px;
+      border: 4px solid #f4f4f4;
+      border-top: none;
+      border-right: none;
+      transform: rotate(-45deg);
+    }
+  }
+  input {
+    visibility: hidden;
+    &:checked {
+      & + label {
+        background-color: #13c2c2;
+      }
+    }
+  }
+}
